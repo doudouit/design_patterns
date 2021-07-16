@@ -1,4 +1,4 @@
-package com.thread;
+package com.thread.deadthread;
 
 /**
  * 创造一个死锁
