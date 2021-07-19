@@ -1,4 +1,4 @@
-package com.thread;
+package com.thread.deadthread;
 
 import java.util.Scanner;
 
