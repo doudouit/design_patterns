@@ -23,5 +23,45 @@ public class Test {
         String str7 = "hello1" + "world1";//常量拼接的字符串，只会在常量池中创建对象
         String str8 = str7.intern();
         System.out.println(str7 == str8);//true
+
+        longTest();
+    }
+
+    public static void longTest() {
+        Long l1 = 1232L;
+        Long l2 = 1232L;
+
+        A a = new A();
+        a.setA(1232L);
+
+        System.out.println(l1 == l2);
+        System.out.println(l1.equals(l2));
+        System.out.println(l1 == a.getA());
+        System.out.println(l1.equals(a.getA()));
+        System.out.println(1232L == a.getA());
+    }
+
+    static class A{
+        private Long a;
+
+        public Long getA() {
+            return a;
+        }
+
+        public void setA(Long a) {
+            this.a = a;
+        }
+    }
+
+    static class B{
+        private long B;
+
+        public long getB() {
+            return B;
+        }
+
+        public void setB(long b) {
+            B = b;
+        }
     }
 }
