@@ -1,4 +1,4 @@
-package com.test;
+package com.test.reference;
 
 public class ReferencePkValue2 {
 
