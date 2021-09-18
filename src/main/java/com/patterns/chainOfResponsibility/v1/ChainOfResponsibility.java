@@ -1,4 +1,4 @@
-package com.patterns.chainOfResponsibility;
+package com.patterns.chainOfResponsibility.v1;
 
 import java.util.ArrayList;
 import java.util.List;
