@@ -10,7 +10,8 @@ import java.lang.reflect.Field;
 public class StringTest {
 
     public static void main(String[] args) throws Exception {
-        stringChange();
+        createString();
+//        stringChange();
     }
 
     private static void createString() {
@@ -29,6 +30,13 @@ public class StringTest {
         String str7 = "hello1" + "world1";//常量拼接的字符串，只会在常量池中创建对象
         String str8 = str7.intern();
         System.out.println(str7 == str8);//true
+
+        String str10 = "abc";// 常量池创建对象
+        String str20 = new String("abc");// 在堆中创建对象
+        String str30 = str20.intern();// 池中如果有abc则返回池中的对象，没有就先将abc加入池中并返回池中的对象。因此，str30指向池中的abc，也就是str10所指向的那一个对象。
+        System.out.println(str10 == str20);// false
+        System.out.println(str20 == str30);// false
+        System.out.println(str10 == str30);// true
     }
 
     /**
