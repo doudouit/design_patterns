@@ -5,10 +5,10 @@ package com.patterns.templateMethod.v2;
  * @author: 180449
  * @date 2021/11/19 16:03
  */
-public abstract class AbstractTemplateB extends AbstractTemplateMethod{
+public abstract class AbstractTemplateB implements AbstractTemplateMethod{
 
     @Override
-    void handler() {
+    public void handler() {
         openDoor();
         pushElement();
         closeDoor();

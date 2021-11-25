@@ -7,27 +7,27 @@ package com.patterns.templateMethod.v2;
  */
 public class TemplateAServiceImpl extends AbstractTemplateA{
     @Override
-    void start() {
+    public void start() {
         System.out.println("A ---start");
     }
 
     @Override
-    void openDoor() {
+    public void openDoor() {
         System.out.println("A ---openDoor");
     }
 
     @Override
-    void pushElement() {
+    public void pushElement() {
         System.out.println("A ----pushElement");
     }
 
     @Override
-    void closeDoor() {
+    public void closeDoor() {
         System.out.println("A ---closeDoor");
     }
 
     @Override
-    void end() {
+    public void end() {
         System.out.println("A --end");
     }
 }

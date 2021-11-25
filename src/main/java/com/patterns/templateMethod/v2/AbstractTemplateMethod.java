@@ -5,20 +5,20 @@ package com.patterns.templateMethod.v2;
  * @author: 180449
  * @date 2021/11/19 16:01
  */
-public abstract class AbstractTemplateMethod {
+public interface AbstractTemplateMethod {
 
-    abstract void start();
+     void start();
 
-    abstract void openDoor();
+     void openDoor();
 
-    abstract void pushElement();
+     void pushElement();
 
-    abstract void closeDoor();
+     void closeDoor();
 
-    abstract void end();
+     void end();
 
     /**
      * 处理的过程
      */
-    abstract void handler();
+     void handler();
 }
