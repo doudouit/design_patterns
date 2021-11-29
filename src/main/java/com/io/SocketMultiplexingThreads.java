@@ -119,16 +119,16 @@ class NioThread extends Thread {
                         }
 
                     }
+                }
 
-                    // 给work用的
-                    if (!queue[id].isEmpty()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(8192);
-                        SocketChannel client = queue[id].take();
-                        client.register(selector, SelectionKey.OP_READ, buffer);
-                        System.out.println("-------------------------------------------");
-                        System.out.println("新客户端：" + client.socket().getPort()+"分配到："+ (id));
-                        System.out.println("-------------------------------------------");
-                    }
+                // 给work用的
+                if (!queue[id].isEmpty()) {
+                    ByteBuffer buffer = ByteBuffer.allocate(8192);
+                    SocketChannel client = queue[id].take();
+                    client.register(selector, SelectionKey.OP_READ, buffer);
+                    System.out.println("-------------------------------------------");
+                    System.out.println("新客户端：" + client.socket().getPort()+"分配到："+ (id));
+                    System.out.println("-------------------------------------------");
                 }
             }
         } catch (IOException | InterruptedException e) {
