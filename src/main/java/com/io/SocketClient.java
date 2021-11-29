@@ -12,7 +12,7 @@ public class SocketClient {
 
     public static void main(String[] args) {
         try {
-            Socket client = new Socket("localhost", 9090);
+            Socket client = new Socket("127.0.0.1", 9090);
 
             client.setSendBufferSize(20);
             client.setTcpNoDelay(true);
