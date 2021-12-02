@@ -47,7 +47,7 @@ public class MyRpcTest {
 
     @Test
     public void startServer() {
-        NioEventLoopGroup boss = new NioEventLoopGroup(1);
+        NioEventLoopGroup boss = new NioEventLoopGroup(10);
         NioEventLoopGroup worker = boss;
 
         ServerBootstrap sbs = new ServerBootstrap();
@@ -56,7 +56,7 @@ public class MyRpcTest {
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
-                        System.out.println("server accept client port: " + ch.remoteAddress().getPort());
+                        //System.out.println("server accept client port: " + ch.remoteAddress().getPort());
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new ServerDecode());
                         pipeline.addLast(new ServerRequestHandler());
@@ -468,6 +468,7 @@ class ServerRequestHandler extends ChannelInboundHandlerAdapter {
         // 2. 创建自己的线程池
         // 3. 使用netty自己的eventloop来处理业务及返回
         ctx.executor().execute(() -> {
+        //ctx.executor().parent().next().execute(() -> {
             String execThreadName = Thread.currentThread().getName();
             MyContent content = new MyContent();
             String res = "io thread: " + ioThreadName + "exec Thread: " + execThreadName + " from args: " + arg;
