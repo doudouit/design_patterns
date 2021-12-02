@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
@@ -47,6 +48,12 @@ public class MyRpcTest {
 
     @Test
     public void startServer() {
+        Car car = new MyCar();
+        Fly fly = new MyFly();
+        Dispatcher dis = new Dispatcher();
+        dis.register(Car.class.getName(), car);
+        dis.register(Fly.class.getName(), fly);
+
         NioEventLoopGroup boss = new NioEventLoopGroup(10);
         NioEventLoopGroup worker = boss;
 
@@ -59,7 +66,7 @@ public class MyRpcTest {
                         //System.out.println("server accept client port: " + ch.remoteAddress().getPort());
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new ServerDecode());
-                        pipeline.addLast(new ServerRequestHandler());
+                        pipeline.addLast(new ServerRequestHandler(dis));
                     }
                 })
                 .bind(new InetSocketAddress("127.0.0.1", 9090));
@@ -404,9 +411,15 @@ class ServerDecode extends ByteToMessageDecoder {
                 buf.readBytes(data);
                 ByteArrayInputStream din = new ByteArrayInputStream(data);
                 ObjectInputStream doin = new ObjectInputStream(din);
-                MyContent content = (MyContent) doin.readObject();
 
-                out.add(new Packmsg(header,content));
+                if(header.getFlag() == 0x14141414){
+                    MyContent content = (MyContent) doin.readObject();
+                    out.add(new Packmsg(header,content));
+
+                }else if(header.getFlag() == 0x14141424){
+                    MyContent content = (MyContent) doin.readObject();
+                    out.add(new Packmsg(header,content));
+                }
             }else{
                 break;
             }
@@ -452,6 +465,12 @@ class ClientResponses extends ChannelInboundHandlerAdapter {
 
 class ServerRequestHandler extends ChannelInboundHandlerAdapter {
 
+    private Dispatcher dis;
+
+    public ServerRequestHandler(Dispatcher dis) {
+        this.dis = dis;
+    }
+
     // provider
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -469,10 +488,25 @@ class ServerRequestHandler extends ChannelInboundHandlerAdapter {
         // 3. 使用netty自己的eventloop来处理业务及返回
         ctx.executor().execute(() -> {
         //ctx.executor().parent().next().execute(() -> {
+
+            String serviceName = requestPkg.getContent().getName();
+            String methodName = requestPkg.getContent().getMethodName();
+            Object c = dis.get(serviceName);
+            Class<?> clazz = c.getClass();
+            Object res = null;
+
+            try {
+                Method method = clazz.getMethod(methodName, requestPkg.content.getParameterTypes());
+                res = method.invoke(c, requestPkg.content.getArgs());
+
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
+
             String execThreadName = Thread.currentThread().getName();
             MyContent content = new MyContent();
-            String res = "io thread: " + ioThreadName + "exec Thread: " + execThreadName + " from args: " + arg;
-            content.setRes(res);
+            //String res = "io thread: " + ioThreadName + "exec Thread: " + execThreadName + " from args: " + arg;
+            content.setRes((String) res);
             byte[] contentByte = SerDerUtil.ser(content);
 
             MyHeader resHeader = new MyHeader();
@@ -489,6 +523,20 @@ class ServerRequestHandler extends ChannelInboundHandlerAdapter {
 
 
 
+    }
+}
+
+class Dispatcher {
+
+    private static ConcurrentHashMap<String, Object> invokeMap = new ConcurrentHashMap<>();
+
+
+    public void register(String k, Object object) {
+        invokeMap.put(k, object);
+    }
+
+    public Object get(String k) {
+        return invokeMap.get(k);
     }
 }
 
