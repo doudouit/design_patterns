@@ -16,21 +16,26 @@ package com.io.rpcrefactor;
  */
 
 
-import com.io.rpcrefactor.service.*;
 import com.io.rpcrefactor.proxy.MyProxy;
 import com.io.rpcrefactor.rpc.Dispatcher;
-import com.io.rpcrefactor.rpc.transport.ServerDecode;
-import com.io.rpcrefactor.rpc.transport.ServerRequestHandler;
+import com.io.rpcrefactor.rpc.protocol.MyContent;
+import com.io.rpcrefactor.service.*;
+import com.io.rpcrefactor.util.SerDerUtil;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.*;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,8 +64,52 @@ public class MyRpcTest {
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         //System.out.println("server accept client port: " + ch.remoteAddress().getPort());
                         ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast(new ServerDecode());
-                        pipeline.addLast(new ServerRequestHandler(dis));
+
+                        // 1 自定义rpc 在自己定义协议的时候你关注过哪些问题：粘包拆包的问题，header+body
+                        // pipeline.addLast(new ServerDecode());
+                        // pipeline.addLast(new ServerRequestHandler(dis));
+
+                        // 2 小火车， 传输协议http
+                        pipeline.addLast(new HttpServerCodec())
+                                .addLast(new HttpObjectAggregator(1024*512))
+                                .addLast(new ChannelInboundHandlerAdapter() {
+                                    @Override
+                                    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                                        // http协议， msg就是一个完整的 http-request
+                                        FullHttpRequest request = (FullHttpRequest) msg;
+                                        System.out.println(request.toString());
+
+                                        ByteBuf content = request.content();
+                                        byte[] data = new byte[content.readableBytes()];
+                                        content.readBytes(data);
+                                        ObjectInputStream oin = new ObjectInputStream(new ByteArrayInputStream(data));
+                                        MyContent myContent = (MyContent) oin.readObject();
+
+                                        String serviceName = myContent.getName();
+                                        String method = myContent.getMethodName();
+                                        Object c = dis.get(serviceName);
+                                        Class<?> clazz = c.getClass();
+                                        Object res = null;
+                                        try {
+                                            Method m = clazz.getMethod(method, myContent.getParameterTypes());
+                                            res = m.invoke(c, myContent.getArgs());
+                                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                                            e.printStackTrace();
+                                        }
+
+                                        MyContent resContent = new MyContent();
+                                        resContent.setRes(res);
+                                        byte[] resContentByte = SerDerUtil.ser(resContent);
+
+                                        DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_0,
+                                                HttpResponseStatus.OK,
+                                                Unpooled.copiedBuffer(resContentByte));
+
+                                        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, resContentByte.length);
+
+                                        ctx.writeAndFlush(response);
+                                    }
+                                });
                     }
                 })
                 .bind(new InetSocketAddress("127.0.0.1", 9090));
