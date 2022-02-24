@@ -42,6 +42,10 @@ public class Test {
         }
         System.out.println("-------------------");
 
-
+        Map<Integer, Integer> map1 = new HashMap<>();
+        Integer v1 = map1.put(1, 2);
+        System.out.println(v1);
+        Integer v2 = map1.put(1, 3);
+        System.out.println(v2);
     }
 }
